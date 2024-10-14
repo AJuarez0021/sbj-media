@@ -137,7 +137,11 @@ public class VideoServiceImpl implements VideoService {
 
         log.info("Video: {}", videoInfo.getTitle());
         RequestVideoStreamDownload request = new RequestVideoStreamDownload(formatSelected, output);
-        Response<Void> response = downloader.downloadVideoStream(request);
+        Response<Void> response = downloader.downloadVideoStream(request);        
+        if(!response.ok()) {
+            response.cancel();
+            throw new IllegalArgumentException("Ocurrio un error al descargar el video: " + response.error().getMessage());       
+        }
         log.info("Status: {}", response.status());
     }
 

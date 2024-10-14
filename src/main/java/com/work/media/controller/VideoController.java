@@ -4,7 +4,10 @@ import com.work.media.dto.VideoFormatDTO;
 import com.work.media.service.VideoService;
 import com.work.media.util.FileTools;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import javax.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -22,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 @CrossOrigin
 @RestController
 @RequestMapping("/api/video")
+@Slf4j
 public class VideoController {
 
     @Autowired
@@ -30,8 +34,7 @@ public class VideoController {
     @GetMapping(path = "/formats", produces = {MediaType.APPLICATION_JSON_VALUE})
     @ResponseBody
     public VideoFormatDTO getFormats(@RequestParam("url") String url) {
-        VideoFormatDTO videoInfo = videoService.getFormatInfo(url);
-        return videoInfo;
+        return  videoService.getFormatInfo(url);        
     }
 
     @GetMapping(path = "/download", produces = {"video/mp4"})
@@ -40,7 +43,9 @@ public class VideoController {
             @RequestParam("id") Integer id,
             HttpServletResponse response) throws IOException {
         VideoFormatDTO videoInfo = videoService.getFormatInfo(url);
-        String out = FileTools.getExtension(videoInfo.getTitle(), "mp4");
+        String out = FileTools.getExtension(videoInfo.getTitle(), "mp4");                
+        out = URLEncoder.encode(out, StandardCharsets.UTF_8);
+        log.info("FileName: {}", out);
         response.setContentType("video/mp4");
         response.setHeader(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + out + "\"");
         videoService.downloadVideo(videoInfo, id, response.getOutputStream());
