@@ -1,6 +1,7 @@
 package com.work.media.service;
 
 import com.github.kiulian.downloader.YoutubeDownloader;
+import com.github.kiulian.downloader.YoutubeException;
 import com.github.kiulian.downloader.downloader.request.RequestVideoInfo;
 import com.github.kiulian.downloader.downloader.request.RequestVideoStreamDownload;
 import com.github.kiulian.downloader.downloader.response.Response;
@@ -24,7 +25,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @Slf4j
-public class VideoServiceImpl implements VideoService{
+public class VideoServiceImpl implements VideoService {
 
     private VideoInfo getVideoInfo(String url) {
         String videoId = url;
@@ -37,6 +38,10 @@ public class VideoServiceImpl implements VideoService{
         YoutubeDownloader downloader = new YoutubeDownloader();
         RequestVideoInfo request = new RequestVideoInfo(videoId);
         Response<VideoInfo> response = downloader.getVideoInfo(request);
+        if (!response.ok()) {            
+             YoutubeException ytE = (YoutubeException) response.error();                
+             throw new IllegalArgumentException("Ocurrio un error al descargar el video: " + ytE.getMessage());            
+        }
         return response.data();
     }
 
@@ -112,7 +117,7 @@ public class VideoServiceImpl implements VideoService{
 
     @Override
     public void downloadVideo(VideoFormatDTO videoInfo, Integer id, OutputStream output) throws IOException {
-        YoutubeDownloader downloader = new YoutubeDownloader();        
+        YoutubeDownloader downloader = new YoutubeDownloader();
         List<FormatDTO> formats = new ArrayList<>();
         formats.addAll(videoInfo.getVideo());
         formats.addAll(videoInfo.getAudio());
@@ -123,14 +128,14 @@ public class VideoServiceImpl implements VideoService{
                 formatSelected = f.getFormat();
                 log.info("Se encontro el formato: {} - {}", f.getId(), f.getType());
                 break;
-            }            
+            }
         }
 
         if (formatSelected == null) {
             throw new IllegalArgumentException("El formato seleccionado no existe");
         }
 
-        log.info("Video: {}", videoInfo.getTitle());               
+        log.info("Video: {}", videoInfo.getTitle());
         RequestVideoStreamDownload request = new RequestVideoStreamDownload(formatSelected, output);
         Response<Void> response = downloader.downloadVideoStream(request);
         log.info("Status: {}", response.status());
